@@ -49,7 +49,7 @@ while (( "$#" )); do
       else
         _exit_with_message "when using --dots an url to a bare git repository must be specified. Example: '--dots https://github.com/myname/chocodots'"
       fi ;;
-    --data) CHOCO_COCOA=true; shift ;;
+    --cocoa) CHOCO_COCOA=true; shift ;;
     *)
       shift ;;
   esac
@@ -58,16 +58,19 @@ done
 ###### => main #################################################################
 function main() {
   # main steps
+  mkdir -p "$HOME/.local/{src,bin,share,log}"
+
   local work_tree="$HOME"
   local git_dir="$work_tree/.config/dotfiles"
   local dots="/usr/bin/git --git-dir=$git_dir --work-tree=$work_tree"
 
   _echo_step "Deploying dotfiles"; echo
   if [[ ! -d $git_dir ]]; then
-    _echo_step "  (Initialize dotfiles bare git repository in $git_dir)"
+    _echo_step "  (Initialize dotfiles bare git repository in $git_dir)"; echo
     mkdir -p "$git_dir"
     git init --bare "$git_dir"
     $dots config status.showUntrackedFiles no
+    [[ -n $CHOCO_DOTS ]] && $dots remote add origin "$CHOCO_DOTS"
     _echo_success
   else
     _echo_step "  (Using local dotfiles in $git_dir)"
@@ -75,20 +78,20 @@ function main() {
   fi
 
   if [[ -n $CHOCO_DOTS ]]; then
-    _echo_step "  (Pull main branch from $CHOCO_DOTS)"
-    $dots remote add origin "$CHOCO_DOTS"
+    _echo_step "  (Pull main branch from $CHOCO_DOTS)"; echo
     $dots branch -m main
     $dots pull origin main
+    _echo_success
   fi
-
+  echo
   if $CHOCO_COCOA; then
     local cocoa="$work_tree/.config/cocoa/cocoa.sh"
     if [[ -f $cocoa ]]; then
-      ./"$cocoa"
+      "$cocoa"
     fi
   fi
 
-  _exit_with_message "alias chocodots='$dots'"
+  _exit_with_message "reminder: alias chocodots='$dots'"
 }
 
 main "$@"
